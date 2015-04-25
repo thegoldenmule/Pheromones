@@ -52,11 +52,17 @@ public class PheromoneMap : MonoBehaviour
     /// Reads pheromone values at a point.
     /// </summary>
     public void Pheromones(
-        float u,
-        float v,
-        ref float[] pheromones)
+        Vector3 point,
+        float radius,
+        out Vector3[] pheromones)
     {
-        
+        float u = Mathf.Clamp(point.x / Size, 0f, 1f);
+        float v = Mathf.Clamp(point.y / Size, 0f, 1f);
+
+        var x = Mathf.RoundToInt(Resolution * u);
+        var y = Mathf.RoundToInt(Resolution * v);
+
+        pheromones = null;
     }
 
     /// <summary>
@@ -65,11 +71,46 @@ public class PheromoneMap : MonoBehaviour
     public void Emit(
         float u,
         float v,
-        float radius,
+        float normalizedRadius,
         int pheromone,
         float value)
     {
-        
+        if (pheromone < 0 || pheromone > NumPheromones - 1)
+        {
+            return;
+        }
+
+        var radius = normalizedRadius * (Resolution - 1);
+        var discretizedRadius = Mathf.CeilToInt(normalizedRadius * (Resolution - 1));
+
+        // get bounding box
+        var x_dc = Mathf.FloorToInt(u * (Resolution - 1));
+        var y_dc = Mathf.FloorToInt(v * (Resolution - 1));
+
+        var x_min = Mathf.Max(0, x_dc - discretizedRadius);
+        var y_min = Mathf.Max(0, y_dc - discretizedRadius);
+
+        var x_max = Mathf.Min(Resolution - 1, x_dc + discretizedRadius);
+        var y_max = Mathf.Min(Resolution - 1, y_dc + discretizedRadius);
+
+        // set values
+        var x_c = u * (Resolution - 1);
+        var y_c = v * (Resolution - 1);
+
+        // use sqr radius for ratio
+        var sqrRadius = radius * radius;
+        for (int x = x_min; x <= x_max; x++)
+        {
+            for (int y = y_min; y <= y_max; y++)
+            {
+                var sqrDistance = (x - x_c) * (x - x_c) + (y - y_c) * (y - y_c);
+                var ratio = Mathf.Clamp(1 - sqrDistance / sqrRadius, 0, 1);
+
+                _pheromones[x, y][pheromone] = Mathf.Clamp(
+                    _pheromones[x, y][pheromone] + ratio * value,
+                    0, 1);
+            }
+        }
     }
 
     /// <summary>
@@ -172,7 +213,7 @@ public class PheromoneMap : MonoBehaviour
         {
             for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
             {
-                _pheromones[x, y] = new float[NUM_PHEROMONES];
+                _pheromones[x, y] = new float[NumPheromones];
             }
         }
     }
