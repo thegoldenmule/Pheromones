@@ -1,27 +1,31 @@
 ﻿public class StateMachine
 {
-    private IState _current;
+    public IState Current
+    {
+        get;
+        private set;
+    }
 
     public void ChangeState(IState state)
     {
-        if (null != _current)
+        if (null != Current)
         {
-            _current.Exit();
+            Current.Exit();
         }
 
-        _current = state;
+        Current = state;
 
-        if (null != _current)
+        if (null != Current)
         {
-            _current.Enter();
+            Current.Enter();
         }
     }
 
     public void Update(float dt)
     {
-        if (null != _current)
+        if (null != Current)
         {
-            _current.Update(dt);
+            Current.Update(dt);
         }
     }
 }

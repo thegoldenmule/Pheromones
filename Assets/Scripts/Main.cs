@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+using System;
+
+using Random = UnityEngine.Random;
 
 public class Main : MonoBehaviour
 {
@@ -8,6 +11,8 @@ public class Main : MonoBehaviour
     public int NumAnts = 1;
 
     public Rect Spawn;
+    
+    public float TimeMultiplier = 1f;
 
     private void Start()
     {
@@ -20,13 +25,18 @@ public class Main : MonoBehaviour
 
         for (var i = 0; i < NumAnts; i++)
         {
-            var ant = Object.Instantiate(Ant);
+            var ant = Instantiate(Ant);
             ant.transform.position = new Vector3(
                 Random.Range(Spawn.xMin, Spawn.xMax),
                 0f,
                 Random.Range(Spawn.yMin, Spawn.yMax));
             ant.Initialize(Map);
         }
+    }
+
+    private void Update()
+    {
+        Time.timeScale = TimeMultiplier;
     }
 
     private void OnDrawGizmos()

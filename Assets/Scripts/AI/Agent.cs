@@ -1,14 +1,22 @@
 ﻿public class Agent
 {
-    private readonly StateMachine _fsm = new StateMachine();
+    private readonly StateMachine _commands = new StateMachine();
 
-    public void Command(IState state)
+    private readonly StateMachine _behaviors = new StateMachine();
+
+    public void Command(ICommand command)
     {
-        _fsm.ChangeState(state);
+        if (null != command)
+        {
+            command.Initialize(_behaviors);
+        }
+
+        _commands.ChangeState(command);
     }
 
     public void Update(float dt)
     {
-        _fsm.Update(dt);
+        _commands.Update(dt);
+        _behaviors.Update(dt);
     }
 }

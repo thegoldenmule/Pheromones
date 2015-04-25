@@ -4,11 +4,6 @@ using UnityEngine;
 public class PheromoneMap : MonoBehaviour
 {
     /// <summary>
-    /// Number of pheromones to store data for.
-    /// </summary>
-    public int NumPheromones = 2;
-
-    /// <summary>
     /// Material to use to present a visualization.
     /// </summary>
     public Material Material;
@@ -29,9 +24,24 @@ public class PheromoneMap : MonoBehaviour
     public float DecayPerSecond = 0.001f;
 
     /// <summary>
-    /// Amount of blur to apply per second.
+    /// Controls how the pheromones disperse.
     /// </summary>
-    public float BlurPerSecond = 0.001f;
+    public float Dispersion = 0.01f;
+
+    /// <summary>
+    /// Factor
+    /// </summary>
+    public float ConvolutionFactor = 1f;
+
+    /// <summary>
+    /// Bias
+    /// </summary>
+    public float ConvolutionBias = 0f;
+
+    /// <summary>
+    /// Blows pheromones!
+    /// </summary>
+    public Vector2 Wind = Vector2.zero;
 
     /// <summary>
     /// Map of pheromones.
@@ -49,6 +59,21 @@ public class PheromoneMap : MonoBehaviour
     private Texture2D _texture;
 
     /// <summary>
+    /// Bounds of the map.
+    /// </summary>
+    public Rect Bounds
+    {
+        get
+        {
+            return new Rect(
+                -Size / 2f,
+                -Size / 2f,
+                Size,
+                Size);
+        }
+    }
+
+    /// <summary>
     /// Reads pheromone values at a point.
     /// </summary>
     public void Pheromones(
@@ -56,8 +81,8 @@ public class PheromoneMap : MonoBehaviour
         float radius,
         out Vector3[] pheromones)
     {
-        float u = Mathf.Clamp(point.x / Size, 0f, 1f);
-        float v = Mathf.Clamp(point.y / Size, 0f, 1f);
+        float u = Mathf.Clamp((point.x + Size / 2f) / Size, 0f, 1f);
+        float v = Mathf.Clamp((point.z + Size / 2f) / Size, 0f, 1f);
 
         var x = Mathf.RoundToInt(Resolution * u);
         var y = Mathf.RoundToInt(Resolution * v);
@@ -69,19 +94,15 @@ public class PheromoneMap : MonoBehaviour
     /// Emits a pheromone at a specific spot.
     /// </summary>
     public void Emit(
-        float u,
-        float v,
-        float normalizedRadius,
+        Vector3 point,
+        float radius,
         int pheromone,
         float value)
     {
-        if (pheromone < 0 || pheromone > NumPheromones - 1)
-        {
-            return;
-        }
+        float u = Mathf.Clamp((point.x + Size / 2f) / Size, 0f, 1f);
+        float v = Mathf.Clamp((point.z + Size / 2f) / Size, 0f, 1f);
 
-        var radius = normalizedRadius * (Resolution - 1);
-        var discretizedRadius = Mathf.CeilToInt(normalizedRadius * (Resolution - 1));
+        var discretizedRadius = Mathf.CeilToInt(radius);
 
         // get bounding box
         var x_dc = Mathf.FloorToInt(u * (Resolution - 1));
@@ -97,14 +118,14 @@ public class PheromoneMap : MonoBehaviour
         var x_c = u * (Resolution - 1);
         var y_c = v * (Resolution - 1);
 
-        // use sqr radius for ratio
-        var sqrRadius = radius * radius;
+        radius = radius * Resolution / Size;
+
         for (int x = x_min; x <= x_max; x++)
         {
             for (int y = y_min; y <= y_max; y++)
             {
-                var sqrDistance = (x - x_c) * (x - x_c) + (y - y_c) * (y - y_c);
-                var ratio = Mathf.Clamp(1 - sqrDistance / sqrRadius, 0, 1);
+                var distance = Mathf.Sqrt((x - x_c) * (x - x_c) + (y - y_c) * (y - y_c));
+                var ratio = Mathf.Clamp(1 - distance / radius, 0, 1);
 
                 _pheromones[x, y][pheromone] = Mathf.Clamp(
                     _pheromones[x, y][pheromone] + ratio * value,
@@ -133,9 +154,55 @@ public class PheromoneMap : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        // apply blur
-
+        UpdateDecay();
         UpdateTexture();
+    }
+
+    /// <summary>
+    /// Applies decay.
+    /// </summary>
+    private void UpdateDecay()
+    {
+        var dt = Time.deltaTime;
+
+        var center = 1f - Dispersion * 4;
+        var convolution = new float[,]
+        {
+            {   0,      Dispersion,    0   },
+            {   Dispersion,    center,    Dispersion },
+            {   0,      Dispersion,    0   }
+        };
+
+        var convolutionSize = convolution.GetLength(0);
+        var halfConvolutionSize = convolutionSize / 2;
+
+        for (int x = 0, xlen = _pheromones.GetLength(0); x < xlen; x++)
+        for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
+        {
+            float r = 0f, g = 0f, b = 0f;
+
+            for (int i = 0; i < convolutionSize; i++)
+            for (int j = 0; j < convolutionSize; j++)
+            {
+                int imageX = (x - halfConvolutionSize + i + xlen) % xlen;
+                int imageY = (y - halfConvolutionSize + j + ylen) % ylen;
+
+                r += _pheromones[imageX, imageY][0] * convolution[i, j];
+                g += _pheromones[imageX, imageY][1] * convolution[i, j];
+                b += _pheromones[imageX, imageY][2] * convolution[i, j]; 
+            }
+
+            var decay = DecayPerSecond * dt;
+            _pheromones[x, y][0] = Mathf.Clamp(
+                ConvolutionFactor * r + ConvolutionBias - decay,
+                0, 1f);
+            _pheromones[x, y][1] = Mathf.Clamp(
+                ConvolutionFactor * g + ConvolutionBias - decay,
+                0, 1f);
+            _pheromones[x, y][1] = Mathf.Clamp(
+                ConvolutionFactor * b + ConvolutionBias - decay,
+                0, 1f);
+        }
     }
 
     /// <summary>
@@ -213,7 +280,7 @@ public class PheromoneMap : MonoBehaviour
         {
             for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
             {
-                _pheromones[x, y] = new float[NumPheromones];
+                _pheromones[x, y] = new float[3];
             }
         }
     }
