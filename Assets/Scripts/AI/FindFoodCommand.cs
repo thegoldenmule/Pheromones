@@ -41,12 +41,6 @@ public class FindFoodCommand : ICommand
                 _ant,
                 PickDestination()));
         }
-
-        _map.Emit(
-            _ant.transform.position,
-            3f,
-            0,
-            0.03f);
     }
 
     public void Exit()

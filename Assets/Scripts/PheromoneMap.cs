@@ -165,12 +165,13 @@ public class PheromoneMap : MonoBehaviour
     {
         var dt = Time.deltaTime;
 
-        var center = 1f - Dispersion * 4;
+        var dispersion = Dispersion * dt;
+        var center = 1f - dispersion * 4;
         var convolution = new float[,]
         {
-            {   0,      Dispersion,    0   },
-            {   Dispersion,    center,    Dispersion },
-            {   0,      Dispersion,    0   }
+            {   0,      dispersion,    0   },
+            {   dispersion,    center,    dispersion },
+            {   0,      dispersion,    0   }
         };
 
         var convolutionSize = convolution.GetLength(0);

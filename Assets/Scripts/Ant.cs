@@ -4,14 +4,21 @@ public class Ant : MonoBehaviour
 {
     private readonly Agent _agent = new Agent();
     private PheromoneMap _pheromones;
+    private Vector3 _lastFrame;
+    private float _rollOver = 0f;
 
     public float Speed = 0.1f;
+    public float DropDistance = 0.1f;
+    public float DropIntensity = 0.01f;
+    public float DropRadius = 1f;
 
     public void Initialize(PheromoneMap pheromones)
     {
         _pheromones = pheromones;
 
         _agent.Command(new FindFoodCommand(this, pheromones));
+
+        _lastFrame = transform.position;
     }
 
     private void Update()
@@ -22,5 +29,29 @@ public class Ant : MonoBehaviour
         }
 
         _agent.Update(Time.deltaTime);
+
+        var position = transform.position;
+        var delta = position - _lastFrame;
+        var length = delta.magnitude;
+        var direction = delta / length;
+
+        var origin = position - _rollOver * direction;
+        length += _rollOver;
+
+        var sum = 0f;
+        while (length > DropDistance)
+        {
+            sum += DropDistance;
+            length -= DropDistance;
+
+            _pheromones.Emit(
+                origin + sum * direction,
+                DropRadius,
+                0,
+                DropIntensity);
+        }
+
+        _rollOver = length;
+        _lastFrame = position;
     }
 }
