@@ -1,5 +1,15 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Contains data for an antenna.
+/// </summary>
+[System.Serializable]
+public class AntennaData
+{
+    public Transform Transform;
+    public float SampleRadius = 5f;
+}
+
 public class Ant : MonoBehaviour
 {
     private readonly Agent _agent = new Agent();
@@ -12,6 +22,9 @@ public class Ant : MonoBehaviour
     public float DropIntensity = 0.01f;
     public float DropRadius = 1f;
 
+    public AntennaData LeftAntenna;
+    public AntennaData RightAntenna;
+    
     public void Initialize(PheromoneMap pheromones)
     {
         _pheromones = pheromones;

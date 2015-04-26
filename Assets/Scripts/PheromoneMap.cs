@@ -1,6 +1,43 @@
 ﻿using System;
+using System.Collections.Generic;   
+
 using UnityEngine;
 
+/// <summary>
+/// A reading for a single pheromone.
+/// </summary>
+[Serializable]
+public class PheromoneReading
+{
+    /// <summary>
+    /// False if none of the pheromone is detected.
+    /// </summary>
+    public bool Detected = false;
+
+    /// <summary>
+    /// Maximum value of the scent.
+    /// </summary>
+    public float Max;
+
+    /// <summary>
+    /// Direction in which scent is strongest.
+    /// </summary>
+    public Vector3 MaxDirection;
+
+    /// <summary>
+    /// Minimum value of scent.
+    /// </summary>
+    public float Min;
+
+    /// <summary>
+    /// Direction in which scent is weakest.
+    /// </summary>
+    public Vector3 MinDirection;
+}
+
+/// <summary>
+/// Keeps track of pheromones + a decay model.
+/// </summary>
 public class PheromoneMap : MonoBehaviour
 {
     /// <summary>
@@ -74,15 +111,77 @@ public class PheromoneMap : MonoBehaviour
     public void Pheromones(
         Vector3 point,
         float radius,
-        out Vector3[] pheromones)
+        ref PheromoneReading[] readings)
     {
         float u = Mathf.Clamp((point.x + Size / 2f) / Size, 0f, 1f);
         float v = Mathf.Clamp((point.z + Size / 2f) / Size, 0f, 1f);
 
-        var x = Mathf.RoundToInt(Resolution * u);
-        var y = Mathf.RoundToInt(Resolution * v);
+        var discretizedRadius = Mathf.CeilToInt(radius);
 
-        pheromones = null;
+        // get bounding box
+        var x_dc = Mathf.FloorToInt(u * (Resolution - 1));
+        var y_dc = Mathf.FloorToInt(v * (Resolution - 1));
+
+        var x_min = Mathf.Max(0, x_dc - discretizedRadius);
+        var y_min = Mathf.Max(0, y_dc - discretizedRadius);
+
+        var x_max = Mathf.Min(Resolution - 1, x_dc + discretizedRadius);
+        var y_max = Mathf.Min(Resolution - 1, y_dc + discretizedRadius);
+
+        // normalized center of reading
+        var x_c = u * (Resolution - 1);
+        var y_c = v * (Resolution - 1);
+
+        // smell for each pheromone
+        for (int p = 0; p < NumPheromones; p++)
+        {
+            var reading = readings[p];
+            reading.Detected = false;
+
+            var minDirection = Vector3.zero;
+            var maxDirection = Vector3.zero;
+
+            var min = float.MaxValue;
+            var max = float.MinValue;
+
+            // smell in bounding box
+            for (int x = x_min; x <= x_max; x++)
+            {
+                for (int y = y_min; y <= y_max; y++)
+                {
+                    var value = _pheromones[x, y][p];
+
+                    if (value > max)
+                    {
+                        max = value;
+                        reading.Detected = true;
+
+                        maxDirection = new Vector3(
+                            x - x_c,
+                            0f,
+                            y - y_c);
+                    }
+                    else if (value < min)
+                    {
+                        min = value;
+                        reading.Detected = true;
+
+                        minDirection = new Vector3(
+                            x - x_c,
+                            0f,
+                            y - y_c);
+                    }
+                }
+            }
+
+            if (reading.Detected)
+            {
+                reading.Min = min;
+                reading.Max = max;
+                reading.MinDirection = minDirection.normalized;
+                reading.MaxDirection = maxDirection.normalized;
+            }
+        }
     }
 
     /// <summary>

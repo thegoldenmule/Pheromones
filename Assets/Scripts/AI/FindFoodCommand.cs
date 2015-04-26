@@ -9,12 +9,23 @@ public class FindFoodCommand : ICommand
 
     private Vector3 _target;
 
+    private PheromoneReading[] _leftReadings;
+    private PheromoneReading[] _rightReadings;
+
     public FindFoodCommand(
         Ant ant,
         PheromoneMap map)
     {
         _ant = ant;
         _map = map;
+
+        _leftReadings = new PheromoneReading[_map.NumPheromones];
+        _rightReadings = new PheromoneReading[_map.NumPheromones];
+        for (int i = 0; i < _map.NumPheromones; i++)
+        {
+            _leftReadings[i] = new PheromoneReading();
+            _rightReadings[i] = new PheromoneReading();
+        }
     }
 
     public void Initialize(StateMachine behaviors)
@@ -29,8 +40,14 @@ public class FindFoodCommand : ICommand
 
     public void Update(float dt)
     {
-        // smell
-        //var whiff = _map.Pheromones();
+        _map.Pheromones(
+            _ant.LeftAntenna.Transform.position,
+            _ant.LeftAntenna.SampleRadius,
+            ref _leftReadings);
+        _map.Pheromones(
+            _ant.RightAntenna.Transform.position,
+            _ant.RightAntenna.SampleRadius,
+            ref _rightReadings);
 
         // no food, continue wandering
         var moveTo = _behaviors.Current as MoveToBehavior;
