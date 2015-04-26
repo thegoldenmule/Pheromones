@@ -39,7 +39,7 @@ public class Ant : MonoBehaviour
         length += _rollOver;
 
         var sum = 0f;
-        while (length > DropDistance)
+        while (length > DropDistance && DropDistance > Mathf.Epsilon)
         {
             sum += DropDistance;
             length -= DropDistance;

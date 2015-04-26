@@ -4,6 +4,11 @@ using UnityEngine;
 public class PheromoneMap : MonoBehaviour
 {
     /// <summary>
+    /// Number of pheromones.
+    /// </summary>
+    public int NumPheromones = 3;
+
+    /// <summary>
     /// Material to use to present a visualization.
     /// </summary>
     public Material Material;
@@ -27,16 +32,6 @@ public class PheromoneMap : MonoBehaviour
     /// Controls how the pheromones disperse.
     /// </summary>
     public float Dispersion = 0.01f;
-
-    /// <summary>
-    /// Factor
-    /// </summary>
-    public float ConvolutionFactor = 1f;
-
-    /// <summary>
-    /// Bias
-    /// </summary>
-    public float ConvolutionBias = 0f;
 
     /// <summary>
     /// Blows pheromones!
@@ -165,6 +160,8 @@ public class PheromoneMap : MonoBehaviour
     {
         var dt = Time.deltaTime;
 
+        // apply convolution matrix
+        // TODO: skip convolution, 2x speedup with just grabbing adjacents
         var dispersion = Dispersion * dt;
         var center = 1f - dispersion * 4;
         var convolution = new float[,]
@@ -177,10 +174,17 @@ public class PheromoneMap : MonoBehaviour
         var convolutionSize = convolution.GetLength(0);
         var halfConvolutionSize = convolutionSize / 2;
 
+        var decay = DecayPerSecond * dt;
+
+        var results = new float[NumPheromones];
+
         for (int x = 0, xlen = _pheromones.GetLength(0); x < xlen; x++)
         for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
         {
-            float r = 0f, g = 0f, b = 0f;
+            for (int p = 0; p < NumPheromones; p++)
+            {
+                results[p] = 0;
+            }
 
             for (int i = 0; i < convolutionSize; i++)
             for (int j = 0; j < convolutionSize; j++)
@@ -188,21 +192,18 @@ public class PheromoneMap : MonoBehaviour
                 int imageX = (x - halfConvolutionSize + i + xlen) % xlen;
                 int imageY = (y - halfConvolutionSize + j + ylen) % ylen;
 
-                r += _pheromones[imageX, imageY][0] * convolution[i, j];
-                g += _pheromones[imageX, imageY][1] * convolution[i, j];
-                b += _pheromones[imageX, imageY][2] * convolution[i, j]; 
+                for (int p = 0; p < NumPheromones; p++)
+                {
+                    results[p] += _pheromones[imageX, imageY][p] * convolution[i, j];
+                }
             }
 
-            var decay = DecayPerSecond * dt;
-            _pheromones[x, y][0] = Mathf.Clamp(
-                ConvolutionFactor * r + ConvolutionBias - decay,
-                0, 1f);
-            _pheromones[x, y][1] = Mathf.Clamp(
-                ConvolutionFactor * g + ConvolutionBias - decay,
-                0, 1f);
-            _pheromones[x, y][1] = Mathf.Clamp(
-                ConvolutionFactor * b + ConvolutionBias - decay,
-                0, 1f);
+            for (int p = 0; p < NumPheromones; p++)
+            {
+                _pheromones[x, y][p] = Mathf.Clamp(
+                    results[p] - decay,
+                    0, 1f);
+            }
         }
     }
 
@@ -219,7 +220,7 @@ public class PheromoneMap : MonoBehaviour
                 _colors[x + y * Resolution] = new Color(
                     values[0],
                     values[1],
-                    0, 1);
+                    values[2], 1);
             }
         }
 
@@ -281,7 +282,7 @@ public class PheromoneMap : MonoBehaviour
         {
             for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
             {
-                _pheromones[x, y] = new float[3];
+                _pheromones[x, y] = new float[NumPheromones];
             }
         }
     }
