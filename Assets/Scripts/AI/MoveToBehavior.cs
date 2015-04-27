@@ -24,6 +24,11 @@ public class MoveToBehavior : IState
         _target = target;
     }
 
+    public void UpdateTarget(Vector3 target)
+    {
+
+    }
+
     public void Enter()
     {
         _ant.Mover.MoveTo(_target);

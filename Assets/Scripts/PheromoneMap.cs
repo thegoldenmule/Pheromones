@@ -154,7 +154,7 @@ public class PheromoneMap : MonoBehaviour
                     if (value > max)
                     {
                         max = value;
-                        reading.Detected = true;
+                        reading.Detected = reading.Detected || value > Mathf.Epsilon;
 
                         maxDirection = new Vector3(
                             x - x_c,
@@ -164,7 +164,7 @@ public class PheromoneMap : MonoBehaviour
                     else if (value < min)
                     {
                         min = value;
-                        reading.Detected = true;
+                        reading.Detected = reading.Detected || value > Mathf.Epsilon;
 
                         minDirection = new Vector3(
                             x - x_c,
@@ -384,5 +384,22 @@ public class PheromoneMap : MonoBehaviour
                 _pheromones[x, y] = new float[NumPheromones];
             }
         }
+    }
+
+    /// <summary>
+    /// Retrieves array of blank readings.
+    /// </summary>
+    /// <param name="numPheromones"></param>
+    /// <returns></returns>
+    public static PheromoneReading[] Readings(int numPheromones)
+    {
+        var readings = new PheromoneReading[numPheromones];
+        
+        for (int i = 0; i < readings.Length; i++)
+        {
+            readings[i] = new PheromoneReading();
+        }
+
+        return readings;
     }
 }
