@@ -116,11 +116,11 @@ public class AntMover : MonoBehaviour
             _ant.Head.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 lookAtQuat,
-                dt * TurnSpeed);
+                dt * HeadSpeed);
         }
         else if (_lookMode == LookMode.Scan)
         {
-            var delta = dt * TurnSpeed;
+            var delta = dt * HeadSpeed;
             _scanParameter = (_scanParameter + delta) % 2f;
 
             var integer = Mathf.FloorToInt(_scanParameter);
