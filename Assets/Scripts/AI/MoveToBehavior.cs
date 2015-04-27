@@ -26,20 +26,16 @@ public class MoveToBehavior : IState
 
     public void Enter()
     {
-
+        _ant.Mover.MoveTo(_target);
     }
 
     public void Update(float dt)
     {
-        var delta = _target - _ant.transform.position;
-        var distance = delta.magnitude;
-        var direction = delta / distance;
-
-        _ant.transform.position += Mathf.Min(_ant.Speed * dt, distance) * direction;
+        // nothing
     }
 
     public void Exit()
     {
-
+        // nothing
     }
 }

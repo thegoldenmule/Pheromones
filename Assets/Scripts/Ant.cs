@@ -18,7 +18,6 @@ public class Ant : MonoBehaviour
     private Vector3 _lastFrame;
     private float _rollOver = 0f;
 
-    public float Speed = 0.1f;
     public float DropDistance = 0.1f;
     public float DropIntensity = 0.01f;
     public float DropRadius = 1f;
@@ -26,6 +25,14 @@ public class Ant : MonoBehaviour
     public AntennaData LeftAntenna;
     public AntennaData RightAntenna;
     public Transform Head;
+
+    public AntMover Mover
+    {
+        get
+        {
+            return GetComponent<AntMover>();
+        }
+    }
     
     public void Initialize(PheromoneMap pheromones)
     {
