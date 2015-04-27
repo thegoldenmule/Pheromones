@@ -46,11 +46,6 @@ public class PheromoneMap : MonoBehaviour
     public int NumPheromones = 3;
 
     /// <summary>
-    /// Material to use to present a visualization.
-    /// </summary>
-    public Material Material;
-
-    /// <summary>
     /// Size, in world space, of the map.
     /// </summary>
     public int Size = 64;
@@ -71,24 +66,9 @@ public class PheromoneMap : MonoBehaviour
     public float Dispersion = 0.01f;
 
     /// <summary>
-    /// Blows pheromones!
-    /// </summary>
-    public Vector2 Wind = Vector2.zero;
-
-    /// <summary>
     /// Map of pheromones.
     /// </summary>
-    private float[,][] _pheromones;
-
-    /// <summary>
-    /// Color buffer for pheromone visualization.
-    /// </summary>
-    private Color[] _colors;
-
-    /// <summary>
-    /// Texture to update for visualization.
-    /// </summary>
-    private Texture2D _texture;
+    public float[,][] Pheromones;
 
     /// <summary>
     /// Bounds of the map.
@@ -108,7 +88,7 @@ public class PheromoneMap : MonoBehaviour
     /// <summary>
     /// Reads pheromone values at a point.
     /// </summary>
-    public void Pheromones(
+    public void Read(
         Vector3 point,
         float radius,
         ref PheromoneReading[] readings)
@@ -149,7 +129,7 @@ public class PheromoneMap : MonoBehaviour
             {
                 for (int y = y_min; y <= y_max; y++)
                 {
-                    var value = _pheromones[x, y][p];
+                    var value = Pheromones[x, y][p];
 
                     if (value > max)
                     {
@@ -221,9 +201,7 @@ public class PheromoneMap : MonoBehaviour
                 var distance = Mathf.Sqrt((x - x_c) * (x - x_c) + (y - y_c) * (y - y_c));
                 var ratio = Mathf.Clamp(1 - distance / radius, 0, 1);
 
-                _pheromones[x, y][pheromone] = Mathf.Clamp(
-                    _pheromones[x, y][pheromone] + ratio * value,
-                    0, 1);
+                Pheromones[x, y][pheromone] = Pheromones[x, y][pheromone] + ratio * value;
             }
         }
     }
@@ -235,11 +213,7 @@ public class PheromoneMap : MonoBehaviour
     {
         Resolution = Mathf.Max(1, Resolution);
 
-        PrepTexture();
-        PrepQuad();
         PrepPheromoneMap();
-
-        UpdateTexture();
     }
 
     /// <summary>
@@ -247,15 +221,6 @@ public class PheromoneMap : MonoBehaviour
     /// that they wis away over time.
     /// </summary>
     private void Update()
-    {
-        UpdateDecay();
-        UpdateTexture();
-    }
-
-    /// <summary>
-    /// Applies decay.
-    /// </summary>
-    private void UpdateDecay()
     {
         var dt = Time.deltaTime;
 
@@ -277,8 +242,8 @@ public class PheromoneMap : MonoBehaviour
 
         var results = new float[NumPheromones];
 
-        for (int x = 0, xlen = _pheromones.GetLength(0); x < xlen; x++)
-        for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
+        for (int x = 0, xlen = Pheromones.GetLength(0); x < xlen; x++)
+        for (int y = 0, ylen = Pheromones.GetLength(1); y < ylen; y++)
         {
             for (int p = 0; p < NumPheromones; p++)
             {
@@ -293,13 +258,13 @@ public class PheromoneMap : MonoBehaviour
 
                 for (int p = 0; p < NumPheromones; p++)
                 {
-                    results[p] += _pheromones[imageX, imageY][p] * convolution[i, j];
+                    results[p] += Pheromones[imageX, imageY][p] * convolution[i, j];
                 }
             }
 
             for (int p = 0; p < NumPheromones; p++)
             {
-                _pheromones[x, y][p] = Mathf.Clamp(
+                Pheromones[x, y][p] = Mathf.Clamp(
                     results[p] - decay,
                     0, 1f);
             }
@@ -307,81 +272,18 @@ public class PheromoneMap : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates the visualization of the pheromone map.
-    /// </summary>
-    private void UpdateTexture()
-    {
-        for (int x = 0, xlen = _pheromones.GetLength(0); x < xlen; x++)
-        {
-            for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
-            {
-                var values = _pheromones[x, y];
-                _colors[x + y * Resolution] = new Color(
-                    values[0],
-                    values[1],
-                    values[2], 1);
-            }
-        }
-
-        _texture.SetPixels(_colors);
-        _texture.Apply();
-    }
-
-    /// <summary>
-    /// Prepares a texture for visualizing the map.
-    /// </summary>
-    private void PrepTexture()
-    {
-        _texture = new Texture2D(
-            Resolution,
-            Resolution,
-            TextureFormat.RGBA32,
-            true);
-        _colors = new Color[Resolution * Resolution];
-    }
-
-    /// <summary>
-    /// Prepares a quad for visualizing the map.
-    /// </summary>
-    private void PrepQuad()
-    {
-        Material.mainTexture = _texture;
-        gameObject.AddComponent<MeshRenderer>().material = Material;
-        var mesh = gameObject.AddComponent<MeshFilter>().mesh = new Mesh();
-        mesh.vertices = new []
-        {
-            new Vector3(-Size / 2f, 0f, -Size / 2f),
-            new Vector3(Size / 2f, 0f, -Size / 2f),
-            new Vector3(Size / 2f, 0f, Size / 2f),
-            new Vector3(-Size / 2f, 0f, Size / 2f),
-        };
-        mesh.uv = new []
-        {
-            new Vector2(0, 0),
-            new Vector2(1, 0),
-            new Vector2(1, 1),
-            new Vector2(0, 1)
-        };
-        mesh.triangles = new []
-        {
-            0, 2, 1,
-            0, 3, 2
-        };
-    }
-
-    /// <summary>
     /// Prepares the data structure that will hold the pheromones.
     /// </summary>
     private void PrepPheromoneMap()
     {
-        _pheromones = new float[
+        Pheromones = new float[
             Resolution,
             Resolution][];
-        for (int x = 0, xlen = _pheromones.GetLength(0); x < xlen; x++)
+        for (int x = 0, xlen = Pheromones.GetLength(0); x < xlen; x++)
         {
-            for (int y = 0, ylen = _pheromones.GetLength(1); y < ylen; y++)
+            for (int y = 0, ylen = Pheromones.GetLength(1); y < ylen; y++)
             {
-                _pheromones[x, y] = new float[NumPheromones];
+                Pheromones[x, y] = new float[NumPheromones];
             }
         }
     }

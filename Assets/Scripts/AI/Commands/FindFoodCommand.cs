@@ -51,11 +51,11 @@ public class FindFoodCommand : ICommand
         }
 
         // update antennae data
-        _map.Pheromones(
+        _map.Read(
             _ant.LeftAntenna.Transform.position,
             _ant.LeftAntenna.SampleRadius,
             ref _leftReadings);
-        _map.Pheromones(
+        _map.Read(
             _ant.RightAntenna.Transform.position,
             _ant.RightAntenna.SampleRadius,
             ref _rightReadings);
