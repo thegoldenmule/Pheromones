@@ -10,6 +10,7 @@ public class AntennaData
     public float SampleRadius = 5f;
 }
 
+[RequireComponent(typeof(AntMover))]
 public class Ant : MonoBehaviour
 {
     private readonly Agent _agent = new Agent();
@@ -24,6 +25,7 @@ public class Ant : MonoBehaviour
 
     public AntennaData LeftAntenna;
     public AntennaData RightAntenna;
+    public Transform Head;
     
     public void Initialize(PheromoneMap pheromones)
     {

@@ -49,6 +49,9 @@ public class FindFoodCommand : ICommand
             _ant.RightAntenna.SampleRadius,
             ref _rightReadings);
 
+        // analyze readings
+
+
         // no food, continue wandering
         var moveTo = _behaviors.Current as MoveToBehavior;
         if (null == moveTo
