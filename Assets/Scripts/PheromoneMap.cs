@@ -264,9 +264,9 @@ public class PheromoneMap : MonoBehaviour
 
             for (int p = 0; p < NumPheromones; p++)
             {
-                Pheromones[x, y][p] = Mathf.Clamp(
+                Pheromones[x, y][p] = Mathf.Max(
                     results[p] - decay,
-                    0, 1f);
+                    0f);
             }
         }
     }

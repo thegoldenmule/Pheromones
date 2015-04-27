@@ -44,10 +44,10 @@ public class ReturnWithFoodCommand : ICommand
             ref _rightReadings);
 
         // travel backward
-        var min = _leftReadings[Pheromones.Scouting].Min < _rightReadings[Pheromones.Scouting].Min
+        var max = _leftReadings[Pheromones.Scouting].Max > _rightReadings[Pheromones.Scouting].Max
             ? _leftReadings[Pheromones.Scouting]
             : _rightReadings[Pheromones.Scouting];
-        if (min.Detected)
+        if (max.Detected)
         {
             var moveTo = _behaviors.Current as MoveToBehavior;
             if (null == moveTo)
@@ -55,13 +55,13 @@ public class ReturnWithFoodCommand : ICommand
                 moveTo = new MoveToBehavior(_ant, _ant.transform.position);
             }
 
-            moveTo.UpdateTarget(_ant.transform.position + min.MinDirection);
+            moveTo.UpdateTarget(_ant.transform.position - max.MaxDirection);
         }
 
         // our trail was blown away! pick a random destination!
         else
         {
-
+            Debug.Log("No trail found!");
         }
     }
 
