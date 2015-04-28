@@ -44,10 +44,24 @@ public class ReturnWithFoodCommand : ICommand
             ref _rightReadings);
 
         // travel backward
-        var max = _leftReadings[Pheromones.Scouting].Max > _rightReadings[Pheromones.Scouting].Max
-            ? _leftReadings[Pheromones.Scouting]
-            : _rightReadings[Pheromones.Scouting];
-        if (max.Detected)
+        PheromoneReading reading;
+        Vector3 readingOrigin;
+
+        var leftReading = _leftReadings[Pheromones.Food];
+        var rightReading = _rightReadings[Pheromones.Food];
+
+        if (leftReading.Min < rightReading.Min)
+        {
+            reading = leftReading;
+            readingOrigin = _ant.LeftAntenna.Transform.position;
+        }
+        else
+        {
+            reading = rightReading;
+            readingOrigin = _ant.RightAntenna.Transform.position;
+        }
+
+        if (reading.Detected)
         {
             var moveTo = _behaviors.Current as MoveToBehavior;
             if (null == moveTo)
@@ -55,7 +69,7 @@ public class ReturnWithFoodCommand : ICommand
                 moveTo = new MoveToBehavior(_ant, _ant.transform.position);
             }
 
-            moveTo.UpdateTarget(_ant.transform.position - max.MaxDirection);
+            moveTo.UpdateTarget(readingOrigin + reading.MinDirection);
         }
 
         // our trail was blown away! pick a random destination!

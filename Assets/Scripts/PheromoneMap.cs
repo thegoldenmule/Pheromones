@@ -130,26 +130,29 @@ public class PheromoneMap : MonoBehaviour
                 for (int y = y_min; y <= y_max; y++)
                 {
                     var value = Pheromones[x, y][p];
-
-                    if (value > max)
+                    
+                    if (value > Mathf.Epsilon)
                     {
-                        max = value;
-                        reading.Detected = reading.Detected || value > Mathf.Epsilon;
+                        if (value > max)
+                        {
+                            max = value;
+                            reading.Detected = true;
 
-                        maxDirection = new Vector3(
-                            x - x_c,
-                            0f,
-                            y - y_c);
-                    }
-                    else if (value < min)
-                    {
-                        min = value;
-                        reading.Detected = reading.Detected || value > Mathf.Epsilon;
+                            maxDirection = new Vector3(
+                                x - x_c,
+                                0f,
+                                y - y_c);
+                        }
+                        else if (value < min)
+                        {
+                            min = value;
+                            reading.Detected = true;
 
-                        minDirection = new Vector3(
-                            x - x_c,
-                            0f,
-                            y - y_c);
+                            minDirection = new Vector3(
+                                x - x_c,
+                                0f,
+                                y - y_c);
+                        }
                     }
                 }
             }
